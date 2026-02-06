@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "light-vllm"
+version = "0.1.0"
+description = "A lightweight vLLM implementation built from scratch"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "Qitao Liu"}]
+dependencies = [
+    "torch==2.4.0",
+    "triton==3.0.0",
+    "flash-attn==2.7.3",
+    "transformers==4.51.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/liuqitaohaha/light-vllm"
+Repository = "https://github.com/liuqitaohaha/light-vllm"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["lightvllm*"]
