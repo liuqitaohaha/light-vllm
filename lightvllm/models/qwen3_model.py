@@ -6,10 +6,10 @@ from lightvllm.layers.activation import SiluAndMul
 from lightvllm.layers.rotary_embedding import get_rope
 from lightvllm.layers.embed_head import Embedding, LMHead
 from lightvllm.layers.linear import Linear, QKVLinear, GateUpLinear
-from lightvllm.models.qwen3_moe_config import Qwen3MoeConfig
+from lightvllm.models.qwen3_config import Qwen3Config
 
 
-class Qwen3MoeAttention(nn.Module):
+class Qwen3Attention(nn.Module):
 
     def __init__(
         self,
@@ -53,7 +53,7 @@ class Qwen3MoeAttention(nn.Module):
         return output
 
     
-class Qwen3MoeMLP(nn.Module):
+class Qwen3MLP(nn.Module):
 
     def __init__(
         self,
@@ -74,15 +74,15 @@ class Qwen3MoeMLP(nn.Module):
         return down
 
 
-class Qwen3MoeDecoderLayer(nn.Module):
+class Qwen3DecoderLayer(nn.Module):
 
     def __init__(
         self,
-        config: Qwen3MoeConfig
+        config: Qwen3Config
     ):
         super().__init__()
         self.input_layernorm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
-        self.self_attn = Qwen3MoeAttention(
+        self.self_attn = Qwen3Attention(
             hidden_size=config.hidden_size,
             head_dim=config.head_dim,
             num_attention_heads=config.num_attention_heads,
@@ -92,7 +92,7 @@ class Qwen3MoeDecoderLayer(nn.Module):
             rms_norm_eps=config.rms_norm_eps,
         )
         self.post_attention_layernorm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
-        self.mlp = Qwen3MoeMLP(
+        self.mlp = Qwen3MLP(
             hidden_size=config.hidden_size,
             intermediate_size=config.intermediate_size,
         )
@@ -114,15 +114,15 @@ class Qwen3MoeDecoderLayer(nn.Module):
         return hidden_states, residual
 
 
-class Qwen3MoeModel(nn.Module):
+class Qwen3Model(nn.Module):
 
     def __init__(
         self,
-        config: Qwen3MoeConfig
+        config: Qwen3Config
     ):
         super().__init__()
         self.embed_tokens = Embedding(config.vocab_size, config.hidden_size)
-        self.layers = nn.ModuleList([Qwen3MoeDecoderLayer(config) for _ in range(config.num_hidden_layers)])
+        self.layers = nn.ModuleList([Qwen3DecoderLayer(config) for _ in range(config.num_hidden_layers)])
         self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
     def forward(
@@ -138,7 +138,7 @@ class Qwen3MoeModel(nn.Module):
         return hidden_states
 
 
-class Qwen3MoeForCausalLM(nn.Module):
+class Qwen3ForCausalLM(nn.Module):
 
     packed_modules_mapping = {
         "q_proj": ("qkv_proj", "q"),
@@ -150,10 +150,10 @@ class Qwen3MoeForCausalLM(nn.Module):
 
     def __init__(
         self,
-        config: Qwen3MoeConfig
+        config: Qwen3Config
     ):
         super().__init__()
-        self.model = Qwen3MoeModel(config)
+        self.model = Qwen3Model(config)
         self.lm_head = LMHead(config.vocab_size, config.hidden_size)
         if config.tie_word_embeddings:
             self.lm_head.weight.data = self.embed_tokens.weight.data

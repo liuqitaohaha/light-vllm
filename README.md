@@ -8,7 +8,7 @@ A lightweight vLLM implementation built from scratch.
 
 ## Roadmap
 
-- Modeling Qwen3MoeForCausalLM
+- Modeling Qwen3ForCausalLM
 
 - PagedAttention & Continuous Batching
 
