@@ -1,10 +1,12 @@
 import torch
 from torch import nn
 from lightvllm.layers.layernorm import RMSNorm
+from lightvllm.layers.attention import Attention
 from lightvllm.layers.activation import SiluAndMul
 from lightvllm.layers.rotary_embedding import get_rope
 from lightvllm.layers.embed_head import Embedding, LMHead
 from lightvllm.layers.linear import Linear, QKVLinear, GateUpLinear
+from lightvllm.models.qwen3_moe_config import Qwen3MoeConfig
 
 
 class Qwen3MoeAttention(nn.Module):
@@ -16,7 +18,7 @@ class Qwen3MoeAttention(nn.Module):
         num_attention_heads: int,
         num_key_value_heads: int,
         rope_theta: float,
-        max_position_embeddings: init,
+        max_position_embeddings: int,
         rms_norm_eps: float
         ):
         super().__init__()
@@ -37,6 +39,12 @@ class Qwen3MoeAttention(nn.Module):
         hidden_states: torch.Tensor,
     ) -> torch.Tensor:
         q, k, v = self.qkv_proj(hidden_states)
+
+        bsz, seq_len, _ = hidden_states.shape
+        q = q.view(bsz, seq_len, self.num_attention_heads, self.head_dim)
+        k = k.view(bsz, seq_len, self.num_key_value_heads, self.head_dim)
+        v = v.view(bsz, seq_len, self.num_key_value_heads, self.head_dim)
+
         q = q.view(-1, self.num_attention_heads, self.head_dim)
         k = k.view(-1, self.num_key_value_heads, self.head_dim)
         v = v.view(-1, self.num_key_value_heads, self.head_dim)
@@ -44,7 +52,7 @@ class Qwen3MoeAttention(nn.Module):
         k = self.k_norm(k)
         q, k = self.rotary_emb(positions, q, k)
         attn_output = self.attn(q, k, v)
-        output = self.o_proj(attn_output.flatten(1, -1))
+        output = self.o_proj(attn_output.flatten(2, 3))
         return output
 
     
@@ -158,6 +166,7 @@ class Qwen3MoeForCausalLM(nn.Module):
         positions: torch.Tensor,
         input_ids: torch.Tensor,
     ) -> torch.Tensor:
+        print(input_ids.shape)
         hidden_states = self.model(positions, input_ids)
-        logits = self.lm_head(hidden_states)
+        logits = self.lm_head(hidden_states[:, -1, :])
         return logits

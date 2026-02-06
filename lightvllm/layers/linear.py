@@ -8,9 +8,13 @@ class Linear(nn.Module):
     def __init__(self, in_features: int, out_features: int):
         super().__init__()
         self.weight = nn.Parameter(torch.empty(out_features, in_features))
+        self.weight.weight_loader = self.weight_loader
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return F.linear(x, self.weight)
+
+    def weight_loader(self, param: nn.Parameter, loaded_weight: torch.Tensor):
+        param.data.copy_(loaded_weight)
 
 
 class QKVLinear(Linear):
@@ -38,9 +42,9 @@ class QKVLinear(Linear):
             shard_offset = self.head_dim * self.num_attention_heads
         elif shard_id == "v":
             shard_size = self.head_dim * self.num_key_value_heads
-            shard_offset = self.head_dim * (self.num_attention_heads + self.key_value_heads)
+            shard_offset = self.head_dim * (self.num_attention_heads + self.num_key_value_heads)
         
-        param.data[:, shard_offset:shard_offset+shard_size] = loaded_weight
+        param.data[shard_offset:shard_offset+shard_size, :] = loaded_weight
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         out = super().forward(x)
@@ -69,4 +73,4 @@ class GateUpLinear(Linear):
             shard_size = self.intermediate_size
             shard_offset = self.intermediate_size
         
-        param.data[:, shard_offset:shard_offset+shard_size] = loaded_weight
+        param.data[shard_offset:shard_offset+shard_size, :] = loaded_weight

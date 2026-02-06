@@ -1,23 +1,29 @@
+import torch
+from lightvllm.layers.sampler import Sampler
 from lightvllm.utils.loader import load_model
 from lightvllm.sampling_params import SamplingParams
 from lightvllm.models.qwen3_moe_config import Qwen3MoeConfig
+from lightvllm.models.qwen3_moe_model import Qwen3MoeForCausalLM
 
 
 class LLM:
+    
     def __init__(self, model: str):
-        self.config = Qwen3MoeConfig(model)
+        self.config = Qwen3MoeConfig(model+"/config.json")
 
-        torch.set_default_dtype(self.config.torch_dtype)
         torch.set_default_device("cuda")
+        torch.set_default_dtype(torch.bfloat16)
 
         self.model = Qwen3MoeForCausalLM(self.config)
         load_model(self.model, path=model)
         
-        torch.set_default_dtype(torch.get_default_dtype())
         torch.set_default_device("cpu")
+        torch.set_default_dtype(torch.get_default_dtype())
 
         self.sampler = Sampler()
+        print("LLM init successfully")
 
+    @torch.inference_mode()
     def generate(self, prompts: list[list[int]], sampling_params: list[SamplingParams]):
         temperatures = [sp.temperature for sp in sampling_params]
         temperatures = torch.tensor(temperatures, dtype=torch.float32, device="cuda")
