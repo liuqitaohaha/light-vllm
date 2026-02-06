@@ -25,12 +25,17 @@ class LLM:
 
     @torch.inference_mode()
     def generate(self, prompts: list[list[int]], sampling_params: list[SamplingParams]):
+        orig_lens = [len(p) for p in prompts]
         temperatures = [sp.temperature for sp in sampling_params]
         temperatures = torch.tensor(temperatures, dtype=torch.float32, device="cuda")
 
         done = [False] * len(prompts)
 
+        step = 0
         while False in done:
+            step += 1
+            print(f"generate step {step}")
+
             active_indices = [i for i, f in enumerate(done) if not f]
 
             active_input_ids = [prompts[i] for i in active_indices]
@@ -42,9 +47,10 @@ class LLM:
 
             for j, i in enumerate(active_indices):
                 if next_tokens[j].item() == self.config.eos_token_id or \
-                    len(prompts[i]) >= sampling_params[i].max_tokens:
+                    len(prompts[i]) - orig_lens[i] >= sampling_params[i].max_tokens:
                     done[i] = True
                 else:
                     prompts[i].append(next_tokens[j].item())
 
-        return prompts
+        generated_outputs = [p[l:] for p, l in zip(prompts, orig_lens)]
+        return generated_outputs 
