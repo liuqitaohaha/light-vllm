@@ -45,9 +45,6 @@ class Qwen3MoeAttention(nn.Module):
         k = k.view(bsz, seq_len, self.num_key_value_heads, self.head_dim)
         v = v.view(bsz, seq_len, self.num_key_value_heads, self.head_dim)
 
-        q = q.view(-1, self.num_attention_heads, self.head_dim)
-        k = k.view(-1, self.num_key_value_heads, self.head_dim)
-        v = v.view(-1, self.num_key_value_heads, self.head_dim)
         q = self.q_norm(q)
         k = self.k_norm(k)
         q, k = self.rotary_emb(positions, q, k)
@@ -166,7 +163,6 @@ class Qwen3MoeForCausalLM(nn.Module):
         positions: torch.Tensor,
         input_ids: torch.Tensor,
     ) -> torch.Tensor:
-        print(input_ids.shape)
         hidden_states = self.model(positions, input_ids)
         logits = self.lm_head(hidden_states[:, -1, :])
         return logits

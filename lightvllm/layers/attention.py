@@ -5,6 +5,12 @@ from flash_attn import flash_attn_func
 class Attention(nn.Module):
 
     def forward(self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor):
+        # Input shape: [Batch, Seq, Heads, Dim]
+        # Transpose to: [Batch, Heads, Seq, Dim]
+        q = q.transpose(1, 2)
+        k = k.transpose(1, 2)
+        v = v.transpose(1, 2)
+
         num_q_heads = q.size(1)
         num_kv_heads = k.size(1)
         if num_q_heads != num_kv_heads:
@@ -21,7 +27,9 @@ class Attention(nn.Module):
     
         attn_weights = torch.softmax(scores, dim=-1)
         
-        return torch.matmul(attn_weights, v)
+        output = torch.matmul(attn_weights, v)
+        # Transpose back to [Batch, Seq, Heads, Dim]
+        return output.transpose(1, 2).contiguous()
 
 
 class FlashAttention(nn.Module):
