@@ -1,10 +1,10 @@
 <p align="center">
-<img width="300" src="assets/logo.jpg">
+    <img width="512" src="assets/logo.jpg">
 </p>
 
 # Light-vLLm
 
-A lightweight vLLM implementation built from scratch.
+Inspired by [nano-vllm](https://github.com/GeeeekExplorer/nano-vllm), this project implements a lightweight vLLM from scratch for learning and practicing LLM inference acceleration technologies.
 
 ## Roadmap
 
