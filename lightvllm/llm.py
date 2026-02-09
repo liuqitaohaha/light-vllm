@@ -24,11 +24,15 @@ class LLM:
         print("LLM init successfully")
 
     @torch.inference_mode()
-    def generate(self, prompts: list[list[int]], sampling_params: list[SamplingParams]):
+    def generate(self, prompts: list[list[int]], sampling_params: list[SamplingParams], attention_mask: list[list[int]] = None):
         orig_lens = [len(p) for p in prompts]
         temperatures = [sp.temperature for sp in sampling_params]
         temperatures = torch.tensor(temperatures, dtype=torch.float32, device="cuda")
-
+        
+        if attention_mask is None:
+            attention_mask = [[1] * len(p) for p in prompts]
+        attention_mask = torch.tensor(attention_mask, dtype=torch.long, device="cuda")
+        
         done = [False] * len(prompts)
 
         step = 0
@@ -39,7 +43,8 @@ class LLM:
             active_indices = [i for i, f in enumerate(done) if not f]
 
             active_input_ids = [prompts[i] for i in active_indices]
-
+            active_attention_mask = [attention_mask[i] for i in active_indices]
+            
             max_len = max(len(seq) for seq in active_input_ids)
             padded_input_ids = [
                 seq + [self.config.pad_token_id] * (max_len - len(seq))
@@ -49,7 +54,7 @@ class LLM:
 
             positions = torch.arange(0, input_ids.shape[1], dtype=torch.long, device="cuda")
 
-            logits = self.model(positions, input_ids)
+            logits = self.model(positions, input_ids, attention_mask=active_attention_mask)
             next_tokens = self.sampler(logits, temperatures[active_indices])
 
             for j, i in enumerate(active_indices):

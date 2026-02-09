@@ -20,10 +20,12 @@ def main():
         )
         for input in inputs
     ]
-    prompts = tokenizer(inputs, add_special_tokens=True).input_ids
+    inputs = tokenizer(inputs, padding=True, add_special_tokens=True)
+    prompts = inputs.input_ids
+    attention_mask = inputs.attention_mask
     sampling_params = SamplingParams(temperature=0.9, max_tokens=256)
 
-    completions = llm.generate(prompts, [sampling_params] * len(prompts))
+    completions = llm.generate(prompts, [sampling_params] * len(prompts), attention_mask=attention_mask)
     
     outputs = tokenizer.batch_decode(completions, skip_special_tokens=True)
     for input, output in zip(inputs, outputs):

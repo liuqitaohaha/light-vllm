@@ -4,7 +4,7 @@ from flash_attn import flash_attn_func
 
 class Attention(nn.Module):
 
-    def forward(self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor):
+    def forward(self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, attention_mask: torch.Tensor):   
         # Input shape: [Batch, Seq, Heads, Dim]
         # Transpose to: [Batch, Heads, Seq, Dim]
         q = q.transpose(1, 2)
@@ -19,6 +19,9 @@ class Attention(nn.Module):
             v = v.repeat_interleave(group_size, dim=1)
         
         scores = torch.matmul(q, k.transpose(-2, -1)) / (q.size(-1) ** 0.5)
+        
+        # Add attention mask
+        scores = scores.masked_fill(attention_mask.unsqueeze(1).unsqueeze(2) == 0, float('-inf'))
         
         seq_len = q.size(-2)
         causal_mask = torch.triu(torch.ones(seq_len, seq_len, device=q.device, dtype=torch.bool), diagonal=1)

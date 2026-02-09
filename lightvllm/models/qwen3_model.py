@@ -37,6 +37,7 @@ class Qwen3Attention(nn.Module):
         self,
         positions: torch.Tensor,
         hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor,
     ) -> torch.Tensor:
         q, k, v = self.qkv_proj(hidden_states)
 
@@ -48,7 +49,7 @@ class Qwen3Attention(nn.Module):
         q = self.q_norm(q)
         k = self.k_norm(k)
         q, k = self.rotary_emb(positions, q, k)
-        attn_output = self.attn(q, k, v)
+        attn_output = self.attn(q, k, v, attention_mask)
         output = self.o_proj(attn_output.flatten(2, 3))
         return output
 
@@ -101,13 +102,14 @@ class Qwen3DecoderLayer(nn.Module):
         self,
         positions: torch.Tensor,
         hidden_states: torch.Tensor,
-        residual: torch.Tensor | None = None,
+        residual: torch.Tensor | None,
+        attention_mask: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         if residual is None:
             hidden_states, residual = self.input_layernorm(hidden_states), hidden_states
         else:
             hidden_states, residual = self.input_layernorm(hidden_states, residual)
-        hidden_states = self.self_attn(positions, hidden_states)
+        hidden_states = self.self_attn(positions, hidden_states, attention_mask)
 
         hidden_states, residual = self.post_attention_layernorm(hidden_states, residual)
         hidden_states = self.mlp(hidden_states)
@@ -129,11 +131,12 @@ class Qwen3Model(nn.Module):
         self,
         positions: torch.Tensor,
         input_ids: torch.Tensor,
+        attention_mask: torch.Tensor,
     ) -> torch.Tensor:
         hidden_states = self.embed_tokens(input_ids)
         residual = None
         for layer in self.layers:
-            hidden_states, residual = layer(positions, hidden_states, residual)
+            hidden_states, residual = layer(positions, hidden_states, residual, attention_mask)
         hidden_states, _ = self.norm(hidden_states, residual)
         return hidden_states
 
@@ -162,7 +165,8 @@ class Qwen3ForCausalLM(nn.Module):
         self,
         positions: torch.Tensor,
         input_ids: torch.Tensor,
+        attention_mask: torch.Tensor,
     ) -> torch.Tensor:
-        hidden_states = self.model(positions, input_ids)
+        hidden_states = self.model(positions, input_ids, attention_mask)        
         logits = self.lm_head(hidden_states[:, -1, :])
         return logits
