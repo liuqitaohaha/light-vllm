@@ -58,6 +58,7 @@ class LLM:
                     done[i] = True
                 else:
                     prompts[i].append(next_tokens[j].item())
+                    attention_mask[i].append(1)
 
         generated_outputs = [p[l:] for p, l in zip(prompts, orig_lens)]
         return generated_outputs 
