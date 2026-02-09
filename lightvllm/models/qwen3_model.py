@@ -6,6 +6,7 @@ from lightvllm.layers.activation import SiluAndMul
 from lightvllm.layers.rotary_embedding import get_rope
 from lightvllm.layers.embed_head import Embedding, LMHead
 from lightvllm.layers.linear import Linear, QKVLinear, GateUpLinear
+
 from lightvllm.models.qwen3_config import Qwen3Config
 
 
@@ -35,8 +36,8 @@ class Qwen3Attention(nn.Module):
 
     def forward(
         self,
-        positions: torch.Tensor,
         hidden_states: torch.Tensor,
+        positions: torch.Tensor,
         attention_mask: torch.Tensor,
     ) -> torch.Tensor:
         q, k, v = self.qkv_proj(hidden_states)
@@ -100,16 +101,16 @@ class Qwen3DecoderLayer(nn.Module):
         
     def forward(
         self,
-        positions: torch.Tensor,
         hidden_states: torch.Tensor,
         residual: torch.Tensor | None,
+        positions: torch.Tensor,
         attention_mask: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         if residual is None:
             hidden_states, residual = self.input_layernorm(hidden_states), hidden_states
         else:
             hidden_states, residual = self.input_layernorm(hidden_states, residual)
-        hidden_states = self.self_attn(positions, hidden_states, attention_mask)
+        hidden_states = self.self_attn(hidden_states, positions, attention_mask)
 
         hidden_states, residual = self.post_attention_layernorm(hidden_states, residual)
         hidden_states = self.mlp(hidden_states)
@@ -129,14 +130,14 @@ class Qwen3Model(nn.Module):
 
     def forward(
         self,
-        positions: torch.Tensor,
         input_ids: torch.Tensor,
+        positions: torch.Tensor,
         attention_mask: torch.Tensor,
     ) -> torch.Tensor:
         hidden_states = self.embed_tokens(input_ids)
         residual = None
         for layer in self.layers:
-            hidden_states, residual = layer(positions, hidden_states, residual, attention_mask)
+            hidden_states, residual = layer(hidden_states, residual, positions, attention_mask)
         hidden_states, _ = self.norm(hidden_states, residual)
         return hidden_states
 
@@ -163,10 +164,10 @@ class Qwen3ForCausalLM(nn.Module):
 
     def forward(
         self,
-        positions: torch.Tensor,
         input_ids: torch.Tensor,
+        positions: torch.Tensor,
         attention_mask: torch.Tensor,
     ) -> torch.Tensor:
-        hidden_states = self.model(positions, input_ids, attention_mask)        
+        hidden_states = self.model(input_ids, positions, attention_mask)
         logits = self.lm_head(hidden_states[:, -1, :])
         return logits

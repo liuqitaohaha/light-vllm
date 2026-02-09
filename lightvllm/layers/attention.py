@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from flash_attn import flash_attn_func
 
+
 class Attention(nn.Module):
 
     def forward(self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, attention_mask: torch.Tensor):   

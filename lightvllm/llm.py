@@ -24,7 +24,12 @@ class LLM:
         print("LLM init successfully")
 
     @torch.inference_mode()
-    def generate(self, prompts: list[list[int]], sampling_params: list[SamplingParams], attention_mask: list[list[int]] = None):
+    def generate(
+        self, 
+        prompts: list[list[int]], 
+        sampling_params: list[SamplingParams], 
+        attention_mask: list[list[int]] = None
+    ):
         orig_lens = [len(p) for p in prompts]
         temperatures = [sp.temperature for sp in sampling_params]
         temperatures = torch.tensor(temperatures, dtype=torch.float32, device="cuda")
@@ -43,22 +48,21 @@ class LLM:
 
             active_input_ids = [prompts[i] for i in active_indices]
             input_ids = torch.tensor(active_input_ids, dtype=torch.long, device="cuda")
-
             positions = torch.arange(0, input_ids.shape[1], dtype=torch.long, device="cuda")
 
             active_attention_mask = [attention_mask[i] for i in active_indices]
             active_attention_mask = torch.tensor(active_attention_mask, dtype=torch.long, device="cuda")
 
-            logits = self.model(positions, input_ids, attention_mask=active_attention_mask)
+            logits = self.model(input_ids, positions, attention_mask=active_attention_mask)
             next_tokens = self.sampler(logits, temperatures[active_indices])
 
             for j, i in enumerate(active_indices):
-                if next_tokens[j].item() == self.config.eos_token_id or \
-                    len(prompts[i]) - orig_lens[i] >= sampling_params[i].max_tokens:
+                prompts[i].append(next_tokens[j].item())
+                attention_mask[i].append(1)
+                if (not sampling_params[i].ignore_eos and \
+                    next_tokens[j].item() == self.config.eos_token_id) or \
+                    len(prompts[i]) - orig_lens[i] == sampling_params[i].max_tokens:
                     done[i] = True
-                else:
-                    prompts[i].append(next_tokens[j].item())
-                    attention_mask[i].append(1)
 
         generated_outputs = [p[l:] for p, l in zip(prompts, orig_lens)]
         return generated_outputs 
