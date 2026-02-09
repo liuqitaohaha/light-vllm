@@ -10,7 +10,7 @@ def main():
 
     inputs = [
         "介绍一下你自己,简短点,不超过30字",
-        # "列出所有100以内的质数",
+        "列出所有100以内的质数",
     ]
     inputs = [
         tokenizer.apply_chat_template(

@@ -39,7 +39,14 @@ class LLM:
             active_indices = [i for i, f in enumerate(done) if not f]
 
             active_input_ids = [prompts[i] for i in active_indices]
-            input_ids = torch.tensor(active_input_ids, dtype=torch.long, device="cuda")
+
+            max_len = max(len(seq) for seq in active_input_ids)
+            padded_input_ids = [
+                seq + [self.config.pad_token_id] * (max_len - len(seq))
+                for seq in active_input_ids
+            ]
+            input_ids = torch.tensor(padded_input_ids, dtype=torch.long, device="cuda")
+
             positions = torch.arange(0, input_ids.shape[1], dtype=torch.long, device="cuda")
 
             logits = self.model(positions, input_ids)
