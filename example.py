@@ -10,8 +10,8 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(model_path)
 
     inputs = [
-        "介绍一下你自己,简短点,不超过30字",
-        "列出所有100以内的质数",
+        "用中文介绍一下你自己",
+        "如何看待中美两国在AI领域的竞争和合作",
     ]
     inputs = [
         tokenizer.apply_chat_template(
@@ -21,12 +21,15 @@ def main():
         )
         for input in inputs
     ]
-    inputs = tokenizer(inputs, padding=True, add_special_tokens=True)
-    prompts = inputs.input_ids
-    attention_mask = inputs.attention_mask
-    sampling_params = SamplingParams(temperature=0.9, max_tokens=256)
+    inputs_tokenzied = tokenizer(inputs, padding=True, add_special_tokens=True)
+    prompts = inputs_tokenzied.input_ids
+    attention_mask = inputs_tokenzied.attention_mask
+    sampling_params = [
+        SamplingParams(temperature=0.0, max_tokens=128),
+        SamplingParams(temperature=0.9, max_tokens=64)
+    ]
 
-    completions = llm.generate(prompts, [sampling_params] * len(prompts), attention_mask=attention_mask)
+    completions = llm.generate(prompts, sampling_params, attention_mask=attention_mask)
     
     outputs = tokenizer.batch_decode(completions, skip_special_tokens=True)
     for input, output in zip(inputs, outputs):

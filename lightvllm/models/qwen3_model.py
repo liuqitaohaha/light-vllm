@@ -160,7 +160,7 @@ class Qwen3ForCausalLM(nn.Module):
         self.model = Qwen3Model(config)
         self.lm_head = LMHead(config.vocab_size, config.hidden_size)
         if config.tie_word_embeddings:
-            self.lm_head.weight.data = self.embed_tokens.weight.data
+            self.lm_head.weight.data = self.model.embed_tokens.weight.data
 
     def forward(
         self,

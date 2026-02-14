@@ -23,7 +23,7 @@ class LLM:
         torch.set_default_dtype(torch.get_default_dtype())
 
         self.sampler = Sampler()
-        print("LLM init successfully")
+        print("LLM init successfully!\n", self.model)
 
     @torch.inference_mode()
     def generate(
@@ -50,10 +50,14 @@ class LLM:
 
             active_input_ids = [prompts[i] for i in active_indices]
             input_ids = torch.tensor(active_input_ids, dtype=torch.long, device="cuda")
-            positions = torch.arange(0, input_ids.shape[1], dtype=torch.long, device="cuda")
 
             active_attention_mask = [attention_mask[i] for i in active_indices]
             active_attention_mask = torch.tensor(active_attention_mask, dtype=torch.long, device="cuda")
+
+            seq_len = input_ids.shape[1]
+            pad_len = seq_len - active_attention_mask.sum(dim=1)
+            positions = torch.arange(seq_len, device="cuda").unsqueeze(0) - pad_len.unsqueeze(1)
+            positions = positions.clamp_min(0).to(torch.long)
 
             logits = self.model(input_ids, positions, attention_mask=active_attention_mask)
             next_tokens = self.sampler(logits, temperatures[active_indices])
