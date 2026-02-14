@@ -4,17 +4,19 @@ from lightvllm.utils.loader import load_model
 from lightvllm.sampling_params import SamplingParams
 from lightvllm.models.qwen3_config import Qwen3Config
 from lightvllm.models.qwen3_model import Qwen3ForCausalLM
+from lightvllm.models.qwen3_moe_config import Qwen3MoeConfig
+from lightvllm.models.qwen3_moe_model import Qwen3MoeForCausalLM
 
 
 class LLM:
     
     def __init__(self, model: str):
-        self.config = Qwen3Config(model+"/config.json")
+        self.config = Qwen3MoeConfig(model+"/config.json")
 
         torch.set_default_device("cuda")
         torch.set_default_dtype(torch.bfloat16)
 
-        self.model = Qwen3ForCausalLM(self.config)
+        self.model = Qwen3MoeForCausalLM(self.config)
         load_model(self.model, path=model)
         
         torch.set_default_device("cpu")

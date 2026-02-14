@@ -3,7 +3,8 @@ from lightvllm import LLM, SamplingParams
 
 
 def main():
-    model_path = "/mnt/liuqitao-default/modelzoo/Qwen3-8B/"
+    # model_path = "/mnt/liuqitao-default/.cache/huggingface/hub/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218"
+    model_path = "/mnt/liuqitao-default/.cache/huggingface/hub/models--TroyDoesAI--Qwen3-15B-A2B-Base/snapshots/d0e6f9c8e7fcd17d3734fb6c60ed0439f7b138d1"
     
     llm = LLM(model=model_path)
     tokenizer = AutoTokenizer.from_pretrained(model_path)

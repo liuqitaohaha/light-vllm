@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class Qwen3Config:
+class Qwen3MoeConfig:
 
     head_dim: int = 128,
     hidden_size: int = 1024,
@@ -18,6 +18,9 @@ class Qwen3Config:
     tie_word_embeddings: bool = True,
     vocab_size: int = 151936
     eos_token_id: int = 151645
+    num_experts: int = 128
+    num_experts_per_tok: int = 8
+    moe_intermediate_size: int = 768
 
     def __init__(self, json_path: str):
         if not os.path.isfile(json_path):
