@@ -99,9 +99,10 @@ class Qwen3MoeSparseMoeBlock(nn.Module):
         hidden_states_reshaped = hidden_states.view(-1, hidden_size)
 
         gate_logits = self.gate(hidden_states_reshaped)
-        gate_probs = gate_logits.softmax(dim=-1)
+        gate_probs = gate_logits.softmax(dim=-1, dtype=torch.float)
         topk_probs, topk_indices = gate_probs.topk(self.num_experts_per_tok, dim=-1)
         topk_probs /= topk_probs.sum(dim=-1, keepdim=True)
+        topk_probs = topk_probs.to(hidden_states.dtype)
 
         final_hidden_states = torch.zeros_like(hidden_states_reshaped) # (batch_size * seq_len, hidden_size)
 

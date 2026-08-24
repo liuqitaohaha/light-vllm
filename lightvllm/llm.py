@@ -20,7 +20,7 @@ class LLM:
         load_model(self.model, path=model)
         
         torch.set_default_device("cpu")
-        torch.set_default_dtype(torch.get_default_dtype())
+        torch.set_default_dtype(torch.float32)
 
         self.sampler = Sampler()
         print("LLM init successfully!\n", self.model)

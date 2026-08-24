@@ -6,16 +6,15 @@ from dataclasses import dataclass
 @dataclass
 class Qwen3MoeConfig:
 
-    head_dim: int = 128,
-    hidden_size: int = 1024,
-    intermediate_size: int = 3072,
-    max_position_embeddings: int = 40960,
-    num_attention_heads: int = 16,
-    num_hidden_layers: int = 28,
-    num_key_value_heads: int = 8,
-    rms_norm_eps: float = 1e-06,
-    rope_theta: int = 1000000,
-    tie_word_embeddings: bool = True,
+    head_dim: int = 128
+    hidden_size: int = 1024
+    max_position_embeddings: int = 40960
+    num_attention_heads: int = 16
+    num_hidden_layers: int = 28
+    num_key_value_heads: int = 8
+    rms_norm_eps: float = 1e-06
+    rope_theta: int = 1000000
+    tie_word_embeddings: bool = True
     vocab_size: int = 151936
     eos_token_id: int = 151645
     num_experts: int = 128
